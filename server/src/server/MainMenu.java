@@ -87,20 +87,23 @@ public class MainMenu extends JFrame {
 			public void run() {
 				while(!stop) {
 					try {
-						
-						BufferedInputStream in = new BufferedInputStream(sock.getInputStream());
+						input = sock.getInputStream();
+						data = new DataInputStream(input);
+						System.out.println(data.readUTF());
+						/*BufferedInputStream in = new BufferedInputStream(sock.getInputStream());
 						byte[] contents = new byte[1024];
 						int bytesRead = 0;
 						String strFileContents = ""; 
-						while((bytesRead = in.read(contents)) != -1) { 
-						    strFileContents += new String(contents, 0, bytesRead);              
-						}
+						bytesRead = in.read(contents);
+						strFileContents += new String(contents, 0, bytesRead);              
+						
 						if (strFileContents!=null) {
-						System.out.println(strFileContents);
-						}
+						System.out.println(strFileContents);*/
+						continue;
+						
 					} catch (Exception e) {
 						// TODO Auto-generated catch block
-						e.printStackTrace();
+						
 					}finally {
 						
 					}
