@@ -3,14 +3,26 @@ package server;
 import java.awt.BorderLayout;
 import java.awt.EventQueue;
 import java.awt.HeadlessException;
+import java.awt.JobAttributes;
+import java.io.BufferedInputStream;
+import java.io.ByteArrayInputStream;
+import java.io.DataInputStream;
 import java.io.IOException;
+import java.io.InputStream;
 import java.net.ServerSocket;
 import java.net.Socket;
+import java.net.SocketException;
 
 import javax.swing.JFrame;
 import javax.swing.JOptionPane;
 import javax.swing.JPanel;
 import javax.swing.border.EmptyBorder;
+
+import com.sun.xml.internal.messaging.saaj.util.ByteInputStream;
+
+import sun.misc.IOUtils;
+import sun.nio.ch.IOUtil;
+
 import javax.swing.JLabel;
 
 public class MainMenu extends JFrame {
@@ -18,6 +30,11 @@ public class MainMenu extends JFrame {
 	private JPanel contentPane;
 	private socketthread tt;
 	private boolean stop = false;
+	private ServerSocket server;
+	private Socket sock;
+	private Thread msg;
+	private InputStream input;
+	private DataInputStream data;
 
 	/**
 	 * Launch the application.
@@ -46,23 +63,55 @@ public class MainMenu extends JFrame {
 		Thread ss = new Thread(new Runnable() {
 			public void run() {
 				while(!stop){
-					if(!stop){
-					tt.start();
-					JOptionPane.showMessageDialog(null, "connected");
-					stop=true;
-					}continue;
+					server = tt.svc();
+					
+					try {
+						sock = server.accept();
+						tt.setSocket(sock);
+						sock.setPerformancePreferences(100, 0, 0);
+						if(sock.isClosed()==true) {
+							JOptionPane.showMessageDialog(null, "disconnected");
+						}
+						
+					} catch (IOException e) {
+						// TODO Auto-generated catch block
+						e.printStackTrace();
+					}
 				}
 				
 			}
 		});
 		ss.start();
-		Thread msg = new Thread(new Runnable() {
+		
+		msg = new Thread(new Runnable() {
 			public void run() {
-				while (!stop){
-					if (tt.getmsg()!=null){
-						JOptionPane.showMessageDialog(null, tt.getmsg());
+				while(!stop) {
+					try {
+						
+						BufferedInputStream in = new BufferedInputStream(sock.getInputStream());
+						byte[] contents = new byte[1024];
+						int bytesRead = 0;
+						String strFileContents = ""; 
+						while((bytesRead = in.read(contents)) != -1) { 
+						    strFileContents += new String(contents, 0, bytesRead);              
+						}
+						if (strFileContents!=null) {
+						System.out.println(strFileContents);
+						}
+					} catch (Exception e) {
+						// TODO Auto-generated catch block
+						e.printStackTrace();
+					}finally {
+						
+					}
+					try {
+						Thread.sleep(500);
+					} catch (InterruptedException e) {
+						// TODO Auto-generated catch block
+						e.printStackTrace();
 					}
 				}
+				
 			}
 		});
 		msg.start();

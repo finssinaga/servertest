@@ -26,22 +26,21 @@ public socketthread() {
 		}
 		
 }
-public synchronized void start(){
+public synchronized ServerSocket svc() {
+	return svc;
+}
+public synchronized Socket setSocket(Socket s){
+	this.sc=s;
+	return sc;
+}
+public synchronized InputStream getmsg(){
 	try {
-		sc = svc.accept();
+		input = sc.getInputStream();
 	} catch (IOException e) {
 		// TODO Auto-generated catch block
 		e.printStackTrace();
 	}
-}
-public synchronized String getmsg(){
-	try {
-		input = sc.getInputStream();
-		DataInputStream data = new DataInputStream(input);
-		message = data.readUTF();
-	} catch (Exception e) {
-	}
-	return message;
+	return input;
 }
 private static socketthread sct;
 public synchronized static socketthread sct(){
