@@ -7,8 +7,10 @@ import java.awt.JobAttributes;
 import java.io.BufferedInputStream;
 import java.io.ByteArrayInputStream;
 import java.io.DataInputStream;
+import java.io.DataOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
+import java.io.OutputStream;
 import java.net.ServerSocket;
 import java.net.Socket;
 import java.net.SocketException;
@@ -29,12 +31,15 @@ public class MainMenu extends JFrame {
 
 	private JPanel contentPane;
 	private socketthread tt;
-	private boolean stop = false;
+	private boolean stop;
 	private ServerSocket server;
 	private Socket sock;
-	private Thread msg;
+	private JLabel label;
 	private InputStream input;
 	private DataInputStream data;
+	private boolean msgreceive;
+	private Thread ss;
+	private int dataread;
 
 	/**
 	 * Launch the application.
@@ -57,79 +62,158 @@ public class MainMenu extends JFrame {
 	 * @throws InterruptedException 
 	 * @throws IOException 
 	 */
-	public MainMenu(socketthread st) throws InterruptedException, IOException {
+	public MainMenu(socketthread st) {
 		this.tt=st;
-		String message = null;
-		Thread ss = new Thread(new Runnable() {
+		setstop(true);
+		//msg().start();
+		ss = new Thread(new Runnable() {
 			public void run() {
-				while(!stop){
-					server = tt.svc();
-					
+				while(ss.isAlive()) {
+				server = tt.svc();
+				while(getstop()){
 					try {
 						sock = server.accept();
-						tt.setSocket(sock);
-						sock.setPerformancePreferences(100, 0, 0);
-						if(sock.isClosed()==true) {
-							JOptionPane.showMessageDialog(null, "disconnected");
+						System.out.println("connected");
+						setstop(false);
+						msgreceive(true);
+						
+					} catch (Exception e) {
+						e.printStackTrace();
+					}
+				}
+				while(!getstop()) {
+					try {
+						if(getint()<0) {
+							System.out.println("Disconnect");
+							setstop(true);
+							msgreceive(false);
+							continue;
 						}
 						
-					} catch (IOException e) {
+					} catch (Exception e) {
 						// TODO Auto-generated catch block
 						e.printStackTrace();
 					}
 				}
-				
+			}
 			}
 		});
 		ss.start();
 		
-		msg = new Thread(new Runnable() {
-			public void run() {
-				while(!stop) {
-					try {
-						input = sock.getInputStream();
-						data = new DataInputStream(input);
-						System.out.println(data.readUTF());
-						/*BufferedInputStream in = new BufferedInputStream(sock.getInputStream());
-						byte[] contents = new byte[1024];
-						int bytesRead = 0;
-						String strFileContents = ""; 
-						bytesRead = in.read(contents);
-						strFileContents += new String(contents, 0, bytesRead);              
-						
-						if (strFileContents!=null) {
-						System.out.println(strFileContents);*/
-						continue;
-						
-					} catch (Exception e) {
-						// TODO Auto-generated catch block
-						
-					}finally {
-						
-					}
-					try {
-						Thread.sleep(500);
-					} catch (InterruptedException e) {
-						// TODO Auto-generated catch block
-						e.printStackTrace();
-					}
-				}
 				
-			}
-		});
-		msg.start();
 		setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
 		setBounds(100, 100, 450, 300);
 		contentPane = new JPanel();
 		contentPane.setBorder(new EmptyBorder(5, 5, 5, 5));
 		contentPane.setLayout(new BorderLayout(0, 0));
 		setContentPane(contentPane);
-		
-		JLabel label = new JLabel();
-		label.setText(message);
+		label = new JLabel();
+		Thread chek = new Thread(new Runnable() {
+			
+			@Override
+			public void run() {
+				while(true) {
+					try {
+						System.out.println(getint());
+						Thread.sleep(500);
+					} catch (Exception e) {
+						// TODO Auto-generated catch block
+						e.printStackTrace();
+					}
+				}
+				
+			}
+		});
+		chek.start();
 		contentPane.add(label, BorderLayout.NORTH);
 		
 	}
-	
+public synchronized boolean getstop(){
+		return this.stop;
+	};
+public synchronized boolean setstop(boolean s) {
+	this.stop=s;
+	return this.stop;
+}
 
+/*public synchronized Thread msgforward() {
+	this.ii = new Thread(new Runnable() {
+		
+		@Override
+		public void run() {
+			while(ii.isAlive()) {
+				try {
+					while(sock.getInputStream().read()>0) {
+						try {
+							InputStream input = sock.getInputStream();
+							DataInputStream data = new DataInputStream(input);
+							String message = data.readUTF();
+							
+							OutputStream out = sock.getOutputStream();
+							DataOutputStream dout = new DataOutputStream(out);
+							dout.writeUTF(message);
+							dout.flush();
+							dout.close();
+							data.close();
+						} catch (Exception e) {
+							// TODO Auto-generated catch block
+							e.printStackTrace();
+						}
+					}
+				} catch (IOException e) {
+					// TODO Auto-generated catch block
+					e.printStackTrace();
+				}
+			}
+			
+		}
+	});
+	return this.ii;
+}*/
+public synchronized int setint(int i) {
+	this.dataread=i;
+	return this.dataread;
+}
+public synchronized int getint() {
+	return this.dataread;
+}
+
+public synchronized boolean msgreceive(boolean msg) {
+	this.msgreceive=msg;
+	return this.msgreceive;
+}
+public synchronized boolean getmsgrec() {
+	return this.msgreceive;
+}
+public synchronized Thread msg() {
+	Thread mm = new Thread(new Runnable() {
+		@Override
+		public void run() {
+			while(true) {
+				try {
+					setint(sock.getInputStream().read());
+					input = sock.getInputStream();
+					data = new DataInputStream(input);
+					System.out.println(data.read());
+					int m = data.read();
+					label.setText(String.valueOf(m));
+					Thread.sleep(500);
+				} catch (Exception e) {
+					
+				}
+			}
+		}
+	});
+	return mm;
+}
+	
+	/*BufferedInputStream in = new BufferedInputStream(sock.getInputStream());
+	byte[] contents = new byte[1024];
+	int bytesRead = 0;
+	String strFileContents = ""; 
+	bytesRead = in.read(contents);
+	strFileContents += new String(contents, 0, bytesRead);              
+	
+	if (strFileContents!=null) {
+	System.out.println(strFileContents);*/
 }
