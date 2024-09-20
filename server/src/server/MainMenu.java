@@ -28,6 +28,7 @@ import sun.nio.ch.IOUtil;
 
 import javax.swing.JLabel;
 import javax.swing.JTextArea;
+import javax.swing.JScrollPane;
 
 public class MainMenu extends JFrame {
 
@@ -44,6 +45,7 @@ public class MainMenu extends JFrame {
 	private int dataread;
 	private Thread mm;
 	private JTextArea edit;
+	private JScrollPane scrollPane;
 
 	/**
 	 * Launch the application.
@@ -68,7 +70,6 @@ public class MainMenu extends JFrame {
 	 */
 	public MainMenu(socketthread st) {
 		this.tt=st;
-		edit = new JTextArea();
 		setstop(true);
 		//msg().start();
 		ss = new Thread(new Runnable() {
@@ -78,9 +79,12 @@ public class MainMenu extends JFrame {
 				while(getstop()){
 					try {
 						sock = server.accept();
-						System.out.println("connected");
+						System.out.println("connected"+sock.getInetAddress());
 						setstop(false);
 						msgreceive(true);
+						if(!msg().isAlive()){
+							msg().start();
+						}
 						setint(sock.getInputStream().read());
 					} catch (Exception e) {
 						e.printStackTrace();
@@ -88,9 +92,9 @@ public class MainMenu extends JFrame {
 				}
 				while(!getstop()) {
 					try {
-						if(getint()<0) {
-							setint(sock.getInputStream().read());
+						if(sock.getInputStream().read()<0) {
 							System.out.println("Disconnect");
+							sock.shutdownInput();
 							setstop(true);
 							msgreceive(false);
 							continue;
@@ -101,21 +105,11 @@ public class MainMenu extends JFrame {
 						e.printStackTrace();
 					}
 				}
-					try {
-						input = sock.getInputStream();
-						data = new DataInputStream(input);
-						System.out.println(data.read());
-						int m = data.read();
-						label.setText(String.valueOf(m));
-						Thread.sleep(500);
-					} catch (Exception e) {
-						e.printStackTrace();
-					}
 			}
 			}
 		});
 		ss.start();
-		msg().start();
+		
 				
 		setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
 		setBounds(100, 100, 450, 300);
@@ -125,8 +119,6 @@ public class MainMenu extends JFrame {
 		setContentPane(contentPane);
 		label = new JLabel();
 		Thread chek = new Thread(new Runnable() {
-			
-			@Override
 			public void run() {
 				while(true) {
 					try {
@@ -143,7 +135,11 @@ public class MainMenu extends JFrame {
 		});
 		//chek.start();
 		contentPane.add(label, BorderLayout.NORTH);
-		contentPane.add(edit, BorderLayout.SOUTH);
+		
+		scrollPane = new JScrollPane();
+		contentPane.add(scrollPane, BorderLayout.CENTER);
+		edit = new JTextArea();
+		scrollPane.setViewportView(edit);
 		
 	}
 public synchronized boolean getstop(){
@@ -205,24 +201,23 @@ public synchronized boolean getmsgrec() {
 }
 public synchronized Thread msg() {
 	mm = new Thread(new Runnable() {
-		@Override
 		public void run() {
-			while(mm.isAlive()) {
 				try {
-					while(sock.getInputStream().available()>0) {
 					InputStream input = sock.getInputStream();
 					DataInputStream data = new DataInputStream(input);
-					System.out.println(data.read());
-					int m = data.read();
-					label.setText(String.valueOf(m));
-					edit.setText(String.valueOf(m));
+					while(true){
+						if(data.read()>0){
+					String m = sock.getInetAddress()+" : "+String.valueOf(data.read());
+					edit.setText(String.valueOf(m.substring(1, 13)));
+					System.out.println(m);
 					//Thread.sleep(500);
-			}
+					continue;
+						}
+					}
 				} catch (Exception e) {
 					e.printStackTrace();
 				}
 			}
-		}
 	});
 	return mm;
 }
