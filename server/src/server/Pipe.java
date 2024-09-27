@@ -1,22 +1,27 @@
 package server;
 
+import java.io.BufferedReader;
 import java.io.DataInputStream;
+import java.io.InputStreamReader;
+import java.io.PrintWriter;
 import java.net.Socket;
 
 public class Pipe implements Runnable{
 final Socket so;
 Pipe(Socket sock){this.so=sock;}
 
-	@Override
+	
 	public void run() {
-		System.out.println(so.getInetAddress());
 		try {
-			while(so.getInputStream().read() != -1) {
-			DataInputStream msg = new DataInputStream(so.getInputStream());
-			System.out.println(msg.readUTF());
+			System.out.println("client connected"+so.getInetAddress()+so.getInputStream());
+			BufferedReader msd = new BufferedReader(new InputStreamReader(so.getInputStream())); 
+			PrintWriter out = new PrintWriter(so.getOutputStream(),true);
+			String ms;
+			while((ms = msd.readLine())!=null) {
+				System.out.println("["+so.getInetAddress()+"]"+ms);
+				out.println(ms);
+				System.out.println(out.checkError());
 			}
-			
-			
 			
 			while(so.getInputStream().read()<0) {
 				so.close();

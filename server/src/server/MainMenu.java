@@ -54,6 +54,7 @@ public class MainMenu extends JFrame {
 				while(true){
 					try {
 						sock = server.accept();
+						System.out.println(sock.getInetAddress());
 						Pipe so = new Pipe(sock);
 						new Thread(so).start();
 					} catch (Exception e) {
