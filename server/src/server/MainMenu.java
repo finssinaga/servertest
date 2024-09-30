@@ -5,6 +5,9 @@ import java.awt.EventQueue;
 import java.io.IOException;
 import java.net.ServerSocket;
 import java.net.Socket;
+import java.util.ArrayList;
+import java.util.HashMap;
+
 import javax.swing.JFrame;
 import javax.swing.JPanel;
 import javax.swing.border.EmptyBorder;
@@ -23,6 +26,7 @@ public class MainMenu extends JFrame {
 	private Thread ss;
 	private JTextArea edit;
 	private JScrollPane scrollPane;
+	public static HashMap<String, Socket> client = new HashMap<String, Socket>();
 
 	/**
 	 * Launch the application.
@@ -53,8 +57,10 @@ public class MainMenu extends JFrame {
 				server = tt.svc();
 				while(true){
 					try {
+						int i = 0;
 						sock = server.accept();
 						System.out.println(sock.getInetAddress());
+						client.put(sock.getInetAddress().toString(), sock);
 						Pipe so = new Pipe(sock);
 						new Thread(so).start();
 					} catch (Exception e) {
@@ -78,11 +84,9 @@ public class MainMenu extends JFrame {
 			public void run() {
 				while(true) {
 					try {
-						String string = sock.getInetAddress().toString();
-						if(!socketthread.getlist().contains(string)) {
-						socketthread.setlist(string);
-						continue;}
-						System.out.println(sock.getInputStream().read());
+						int th = Thread.activeCount();
+						System.out.println(th);
+						Thread.sleep(500);
 					} catch (Exception e) {
 						// TODO Auto-generated catch block
 						e.printStackTrace();
