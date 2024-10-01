@@ -6,13 +6,21 @@ import java.io.IOException;
 import java.io.InputStreamReader;
 import java.io.PrintWriter;
 import java.net.Socket;
+import java.util.Base64;
 
 public class Pipe implements Runnable{
 final Socket so;
 private BufferedReader msd;
 private PrintWriter out;
 
-
+public void broadcast(String message, Socket scx) throws Exception {
+	for (Runnable user : MainMenu.client.keySet()) {
+		if(MainMenu.client.get(user)!=scx) {
+			MainMenu.client.get(user).getOutputStream();
+			new PrintWriter(MainMenu.client.get(user).getOutputStream(),true).println(message);
+		}
+	}
+}
 public Pipe(Socket sock){
 	this.so=sock;
 	
@@ -30,19 +38,19 @@ public Pipe(Socket sock){
 		try {
 			String ms;
 			while((ms = msd.readLine())!=null) {
-				String tujuan = ms.substring(0,ms.indexOf(">"));
-				System.out.println(so.getInetAddress()+" -> "+tujuan+" : "+ms.substring(ms.indexOf(">")+1));
-				if(MainMenu.client.containsKey(tujuan)) {
-					Socket tjx = MainMenu.client.get(tujuan);
-					PrintWriter pt = new PrintWriter(tjx.getOutputStream(),true);
-					pt.println(ms.substring(ms.indexOf(">")+1));
-				}else {
-					out.println("no user associated with that address");
+				if(ms.contains(">")) {
+					broadcast(ms.substring(ms.indexOf(">")+1), so);
+					MainMenu.getjtext().setText(MainMenu.getjtext().getText()+"\n"+ms);
+				}
+				if(ms.contains("#")) {
+					out.println("Welcome "+ms.substring(0,ms.indexOf("#"))+". Current online user : "+MainMenu.client.size());
+					MainMenu.getjtext().setText(MainMenu.getjtext().getText()+"\n"+"User Login : "+ms.substring(0,ms.indexOf("#")));
 				}
 			}
-			MainMenu.client.remove(so.getInetAddress().toString());
+			MainMenu.client.remove(this);
+			MainMenu.getjtext().setText(MainMenu.getjtext().getText()+"\n"+"removed user "+so.getInetAddress());
 		} catch (Exception e) {
-			e.printStackTrace();
+			MainMenu.getjtext().setText(MainMenu.getjtext().getText()+"\n"+e);
 		}
 	}
 	
